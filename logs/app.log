@@ -1,0 +1,5 @@
+2026-06-14 21:04:19 | INFO | main - POST /shipment → 201 (0.002s)
+2026-06-14 21:04:24 | INFO | main - POST /shipment → 201 (0.002s)
+2026-06-14 21:04:28 | INFO | main - POST /shipment → 201 (0.001s)
+2026-06-14 21:05:07 | INFO | main - Received shipment data: weight=11 content='dasdasdsa' status='In transit'
+2026-06-14 21:05:07 | INFO | main - POST /shipment → 201 (0.003s)

@@ -1,17 +1,47 @@
 from enum import Enum
+import logging
+import sys
+import time
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from scalar_fastapi import get_scalar_api_reference
 from check_shipment_field import check_shipment_field
 from check_shipment_requirements import check_shipment_requirements
 import db
 from models.shipment_model import ShipmentModel
-
+from loguru import logger
 app = FastAPI()
 
+logger.remove()  # usuń domyślny handler
 
+logger.add(
+    sys.stdout,
+    level="INFO",
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan> - <white>{message}</white>",
+    colorize=True,
+)
 
+logger.add(
+    "logs/app.log",
+    level="INFO",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name} - {message}",
+    rotation="10 MB",     # nowy plik po 10 MB
+    retention="7 days",   # usuń logi starsze niż 7 dni
+    compression="zip",    # archiwizuj stare pliki
+)
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    duration = time.time() - start
+
+    logger.info(
+        f"{request.method} {request.url.path} "
+        f"→ {response.status_code} ({duration:.3f}s)"
+    )
+    return response
 
 
 @app.get("/shipment/{field}")
@@ -78,6 +108,7 @@ def shipment_update(id: int, shipment_data: ShipmentModel) -> ShipmentModel:
 
 @app.post("/shipment", status_code=status.HTTP_201_CREATED)
 def submit_shipment(shipment_data: ShipmentModel) -> ShipmentModel:
+    logger.info(f"Received shipment data: {shipment_data}")
     id = max(db.shipment_records.keys()) + 1
     shipments = {
         "weight": shipment_data.weight,
