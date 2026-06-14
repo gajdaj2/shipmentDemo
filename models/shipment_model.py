@@ -26,5 +26,4 @@ class ShipmentModel(BaseModel):
         max_length=50,
         default=ShipmentStatus.IN_TRANSIT.value,
         description="Current status of the shipment",
-        
     )
