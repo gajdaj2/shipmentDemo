@@ -56,7 +56,7 @@ def patch_shipment_field(field: str, id: int, value: Any) -> dict[str, Any]:
     return {field: getattr(db.shipment_records[id], field)}
 
 
-@app.patch("/shipment/{id}", status_code=status.HTTP_200_OK)
+@app.patch("/shipment/{id}", status_code=status.HTTP_200_OK,response_model=ShipmentModel)
 def shipment_update_status(id: int, new_status: str) -> ShipmentModel:
     if id not in db.shipment_records:
         raise HTTPException(
