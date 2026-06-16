@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from enum import Enum
 import logging
 import sys
@@ -11,7 +12,28 @@ from check_shipment_requirements import check_shipment_requirements
 import db
 from models.shipment_model import ShipmentModel
 from loguru import logger
-app = FastAPI()
+from db import CRUDDatabase
+
+db: CRUDDatabase | None = None
+
+
+def validate_shipment_exists(id, shipment):
+    if shipment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Shipment with id {id} not found",
+        )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global db
+    db = CRUDDatabase()
+    app.state.db = db
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 logger.remove()  # usuń domyślny handler
 
@@ -26,10 +48,11 @@ logger.add(
     "logs/app.log",
     level="INFO",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name} - {message}",
-    rotation="10 MB",     # nowy plik po 10 MB
-    retention="7 days",   # usuń logi starsze niż 7 dni
-    compression="zip",    # archiwizuj stare pliki
+    rotation="10 MB",  # nowy plik po 10 MB
+    retention="7 days",  # usuń logi starsze niż 7 dni
+    compression="zip",  # archiwizuj stare pliki
 )
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -44,78 +67,76 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+
 @app.get("/shipment/{field}")
 def get_shipment_field(field: str, id: int) -> dict[str, Any]:
+    assert db is not None
     check_shipment_field(field, id)
-    return {field: getattr(db.shipment_records[id], field)}
+    return {field: getattr(db.get_shipment(id), field)}
 
 
 @app.patch("/shipment/{field}", status_code=status.HTTP_200_OK)
 def patch_shipment_field(field: str, id: int, value: Any) -> dict[str, Any]:
-    db.shipment_records[id] = db.shipment_records[id].model_copy(update={field: value})
-    return {field: getattr(db.shipment_records[id], field)}
+    assert db is not None
+    shipment = db.get_shipment(id)
+    setattr(shipment, field, value)
+    db.update_shipment(id, shipment)
+    return {field: getattr(shipment, field)}
 
 
-@app.patch("/shipment/{id}", status_code=status.HTTP_200_OK,response_model=ShipmentModel)
+@app.patch(
+    "/shipment/{id}", status_code=status.HTTP_200_OK, response_model=ShipmentModel
+)
 def shipment_update_status(id: int, new_status: str) -> ShipmentModel:
-    if id not in db.shipment_records:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shipment with id {id} not found",
-        )
-    db.shipment_records[id].status = new_status
-    return db.shipment_records[id]
+    assert db is not None
+    shipment = db.get_shipment(id)
+    validate_shipment_exists(id, shipment)
+    shipment.status = new_status
+    db.update_shipment(id, shipment)
+    return shipment
+
+
 
 
 def delete_shipment(id: int) -> dict[str, Any]:
-    if id not in db.shipment_records:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shipment with id {id} not found",
-        )
-    deleted_shipment = db.shipment_records.pop(id)
-    return {"id": id, "deleted_shipment": deleted_shipment}
-
+    assert db is not None
+    shipment = db.get_shipment(id)
+    validate_shipment_exists(id, shipment)
+    db.delete_shipment(id)
+    return {"message": f"Shipment with id {id} deleted", "shipment": shipment}
 
 @app.get("/shipments", status_code=status.HTTP_200_OK, description="Get all shipments")
 def get_all_shipments() -> list[ShipmentModel]:
-    return list(map(lambda x: db.shipment_records[x], db.shipment_records))
-
+    assert db is not None
+    return db.get_all_shipments()
+    
 
 @app.get("/shipment", status_code=status.HTTP_200_OK)
 def get_shipment(id: int | None = None) -> ShipmentModel:
+    assert db is not None
     if id is None:
-        id = max(db.shipment_records.keys())
-        return db.shipment_records[id]
-    if id not in db.shipment_records:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shipment with id {id} not found",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing required query parameter: id",
         )
-    return db.shipment_records[id]
+    return db.get_shipment(id)
 
 
 @app.put("/shipment/{id}", status_code=status.HTTP_200_OK)
 def shipment_update(id: int, shipment_data: ShipmentModel) -> ShipmentModel:
-    if id not in db.shipment_records:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Shipment with id {id} not found",
-        )
-    db.shipment_records[id] = shipment_data
-    return db.shipment_records[id]
+    assert db is not None
+    validate_shipment_exists(id, db.get_shipment(id))
+    updated_shipment = db.update_shipment(id, shipment_data)
+    return updated_shipment
 
 
 @app.post("/shipment", status_code=status.HTTP_201_CREATED)
 def submit_shipment(shipment_data: ShipmentModel) -> ShipmentModel:
     logger.info(f"Received shipment data: {shipment_data}")
-    id = max(db.shipment_records.keys()) + 1
-    shipments = {
-        "weight": shipment_data.weight,
-        "content": shipment_data.content,
-    }
-    db.shipment_records[id] = ShipmentModel(**shipments)
-    return db.shipment_records[id]
+    assert db is not None
+    created_shipment = db.create_shipment(shipment_data)
+    logger.info(f"Created shipment: {created_shipment}")
+    return created_shipment
 
 
 @app.get("/scalar")
