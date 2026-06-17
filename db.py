@@ -33,8 +33,7 @@ class CRUDDatabase:
         
         
     def get_all_shipments(self) -> list[ShipmentModel]:
-        connection = sqlite3.connect("shipments.db")
-        cursor = connection.cursor()
+        connection, cursor = self.create_connection()
         cursor.execute("SELECT * FROM shipments")
         rows = cursor.fetchall()
         connection.close()
@@ -43,8 +42,7 @@ class CRUDDatabase:
         ]
 
     def load_shipments(self):
-        connection = sqlite3.connect("shipments.db")
-        cursor = connection.cursor()
+        connection, cursor = self.create_connection()
         cursor.execute("SELECT * FROM shipments")
         rows = cursor.fetchall()
         for row in rows:
@@ -55,8 +53,7 @@ class CRUDDatabase:
         connection.close()
         
     def get_shipment(self, id: int) -> ShipmentModel:
-        connection = sqlite3.connect("shipments.db")
-        cursor = connection.cursor()
+        connection, cursor = self.create_connection()
         cursor.execute("SELECT * FROM shipments WHERE id = ?", (id,))
         row = cursor.fetchone()
         connection.close()
@@ -65,11 +62,15 @@ class CRUDDatabase:
         id, status, weight, content = row
         return ShipmentModel(status=status, weight=weight, content=content)
 
+    def create_connection(self):
+        connection = sqlite3.connect("shipments.db")
+        cursor = connection.cursor()
+        return connection,cursor
+
 
 
     def create_shipment(self, shipment_data: ShipmentModel) -> ShipmentModel:
-        connection = sqlite3.connect("shipments.db")
-        cursor = connection.cursor()
+        connection, cursor = self.create_connection()
         cursor.execute(
             "INSERT INTO shipments (status, weight, content) VALUES (?, ?, ?)",
             (shipment_data.status, shipment_data.weight, shipment_data.content),
@@ -83,8 +84,7 @@ class CRUDDatabase:
     def update_shipment(self, id: int, shipment_data: ShipmentModel) -> ShipmentModel:
         if id not in self.shipment_records:
             raise ValueError(f"Shipment with id {id} not found")
-        connection = sqlite3.connect("shipments.db")
-        cursor = connection.cursor()
+        connection, cursor = self.create_connection()
         cursor.execute(
             "UPDATE shipments SET status = ?, weight = ?, content = ? WHERE id = ?",
             (shipment_data.status, shipment_data.weight, shipment_data.content, id),
@@ -97,8 +97,7 @@ class CRUDDatabase:
     def delete_shipment(self, id: int) -> dict[str, ShipmentModel]:
         if id not in self.shipment_records:
             raise ValueError(f"Shipment with id {id} not found")
-        connection = sqlite3.connect("shipments.db")
-        cursor = connection.cursor()
+        connection, cursor = self.create_connection()
         cursor.execute("DELETE FROM shipments WHERE id = ?", (id,))
         connection.commit()
         connection.close()

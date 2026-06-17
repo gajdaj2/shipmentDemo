@@ -4,15 +4,16 @@ import logging
 import sys
 import time
 from typing import Any
-
 from fastapi import FastAPI, HTTPException, Request, status
 from scalar_fastapi import get_scalar_api_reference
 from check_shipment_field import check_shipment_field
 from check_shipment_requirements import check_shipment_requirements
-import db
 from models.shipment_model import ShipmentModel
 from loguru import logger
 from db import CRUDDatabase
+from rich import print, panel
+from models.session import create_db_and_tables
+
 
 db: CRUDDatabase | None = None
 
@@ -26,10 +27,15 @@ def validate_shipment_exists(id, shipment):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print(panel.Panel("Starting up...", style="bold green"))
+    print(panel.Panel("Initializing database...", style="bold blue"))
+    create_db_and_tables()
+    print(panel.Panel("Loading shipments from database...", style="bold blue"))
     global db
     db = CRUDDatabase()
     app.state.db = db
     yield
+    print(panel.Panel("Shutting down...", style="bold red"))
 
 
 app = FastAPI(lifespan=lifespan)
