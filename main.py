@@ -4,15 +4,16 @@ import logging
 import sys
 import time
 from typing import Any
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile, status
 from scalar_fastapi import get_scalar_api_reference
+from sqlmodel import Session
 from check_shipment_field import check_shipment_field
 from check_shipment_requirements import check_shipment_requirements
 from models.shipment_model import ShipmentModel
 from loguru import logger
 from db import CRUDDatabase
 from rich import print, panel
-from models.session import create_db_and_tables
+from models.session import create_db_and_tables, get_db
 
 
 db: CRUDDatabase | None = None
@@ -72,6 +73,14 @@ async def log_requests(request: Request, call_next):
     )
     return response
 
+
+
+@app.post("/uploadfile", status_code=status.HTTP_201_CREATED)
+async def upload_file(file: UploadFile):
+    file_content = await file.read()
+    logger.info(f"Received file: {file.filename}, size: {len(file_content)}")
+    return {"filename": file.filename, "size": len(file_content)}
+    # Tutaj możesz dodać logikę przetwarzania pliku
 
 
 @app.get("/shipment/{field}")
@@ -137,12 +146,11 @@ def shipment_update(id: int, shipment_data: ShipmentModel) -> ShipmentModel:
 
 
 @app.post("/shipment", status_code=status.HTTP_201_CREATED)
-def submit_shipment(shipment_data: ShipmentModel) -> ShipmentModel:
+def submit_shipment(shipment_data: ShipmentModel,db: Session = Depends(get_db)) -> ShipmentModel:
     logger.info(f"Received shipment data: {shipment_data}")
-    assert db is not None
-    created_shipment = db.create_shipment(shipment_data)
+    created_shipment = db.add(shipment_data)
     logger.info(f"Created shipment: {created_shipment}")
-    return created_shipment
+    return shipment_data
 
 
 @app.get("/scalar")

@@ -57,9 +57,25 @@ def generate_hashtag(s):
 
 #print(generate_hashtag("hello"))
 #print(generate_hashtag("'#      Codewars'"))# Output: "#helloH"
-print(generate_hashtag("#Codewarsisnice"))  # Output: False
+#print(generate_hashtag("#Codewarsisnice"))  # Output: False
 
 def sum_strings(x, y):
     return str((int(x)+int(y)))
 
-print(sum_strings("1", "2"))  # Output: "579"
+#print(sum_strings("1", "2"))  # Output: "579"
+
+
+
+def pig_it(text):
+    words = text.split()
+    print(words)
+    new_words = ""
+    for i in words:
+        if i[0].isalpha():
+            new_words += i[1:len(i)]+i[0]+'ay '
+        else:
+            new_words += i + ' '
+    return new_words.strip().rstrip()
+    
+print(pig_it('Pig latin is cool')) # igPay atinlay siay oolcay
+pig_it(('Hello world !'))     # elloHay orldway !

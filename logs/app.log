@@ -9,3 +9,13 @@
 2026-06-16 09:31:58 | INFO | main - GET /shipment → 404 (0.001s)
 2026-06-16 09:40:34 | INFO | main - GET /shipment → 200 (0.004s)
 2026-06-16 10:28:38 | INFO | main - GET /shipments → 200 (0.003s)
+2026-06-22 10:13:14 | INFO | main - GET / → 404 (0.001s)
+2026-06-22 10:13:14 | INFO | main - GET /favicon.ico → 404 (0.000s)
+2026-06-22 10:13:18 | INFO | main - GET /docs → 200 (0.001s)
+2026-06-22 10:13:18 | INFO | main - GET /openapi.json → 200 (0.010s)
+2026-06-22 10:13:29 | INFO | main - Received file: README, size: 0
+2026-06-22 10:13:29 | INFO | main - POST /uploadfile → 201 (0.003s)
+2026-06-22 10:15:21 | INFO | main - Received file: README, size: 0
+2026-06-22 10:15:21 | INFO | main - POST /uploadfile → 201 (0.003s)
+2026-06-22 10:16:03 | INFO | main - Received file: index.md, size: 5554
+2026-06-22 10:16:03 | INFO | main - POST /uploadfile → 201 (0.002s)
