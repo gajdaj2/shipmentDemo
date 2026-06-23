@@ -15,7 +15,6 @@ from db import CRUDDatabase
 from rich import print, panel
 from models.session import create_db_and_tables, get_db
 
-
 db: CRUDDatabase | None = None
 
 
@@ -26,11 +25,12 @@ def validate_shipment_exists(id, shipment):
             detail=f"Shipment with id {id} not found",
         )
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(panel.Panel("Starting up...", style="bold green"))
     print(panel.Panel("Initializing database...", style="bold blue"))
-    create_db_and_tables()
+    await create_db_and_tables()
     print(panel.Panel("Loading shipments from database...", style="bold blue"))
     global db
     db = CRUDDatabase()
@@ -74,7 +74,6 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-
 @app.post("/uploadfile", status_code=status.HTTP_201_CREATED)
 async def upload_file(file: UploadFile):
     file_content = await file.read()
@@ -111,8 +110,6 @@ def shipment_update_status(id: int, new_status: str) -> ShipmentModel:
     return shipment
 
 
-
-
 def delete_shipment(id: int) -> dict[str, Any]:
     assert db is not None
     shipment = db.get_shipment(id)
@@ -120,11 +117,12 @@ def delete_shipment(id: int) -> dict[str, Any]:
     db.delete_shipment(id)
     return {"message": f"Shipment with id {id} deleted", "shipment": shipment}
 
+
 @app.get("/shipments", status_code=status.HTTP_200_OK, description="Get all shipments")
 def get_all_shipments() -> list[ShipmentModel]:
     assert db is not None
     return db.get_all_shipments()
-    
+
 
 @app.get("/shipment", status_code=status.HTTP_200_OK)
 def get_shipment(id: int | None = None) -> ShipmentModel:
@@ -146,7 +144,9 @@ def shipment_update(id: int, shipment_data: ShipmentModel) -> ShipmentModel:
 
 
 @app.post("/shipment", status_code=status.HTTP_201_CREATED)
-def submit_shipment(shipment_data: ShipmentModel,db: Session = Depends(get_db)) -> ShipmentModel:
+def submit_shipment(
+    shipment_data: ShipmentModel, db: Session = Depends(get_db)
+) -> ShipmentModel:
     logger.info(f"Received shipment data: {shipment_data}")
     created_shipment = db.add(shipment_data)
     logger.info(f"Created shipment: {created_shipment}")

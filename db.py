@@ -30,8 +30,7 @@ def initialize_database():
 class CRUDDatabase:
     def __init__(self):
         self.shipment_records = {}
-        
-        
+
     def get_all_shipments(self) -> list[ShipmentModel]:
         connection, cursor = self.create_connection()
         cursor.execute("SELECT * FROM shipments")
@@ -51,7 +50,7 @@ class CRUDDatabase:
                 status=status, weight=weight, content=content
             )
         connection.close()
-        
+
     def get_shipment(self, id: int) -> ShipmentModel:
         connection, cursor = self.create_connection()
         cursor.execute("SELECT * FROM shipments WHERE id = ?", (id,))
@@ -65,9 +64,7 @@ class CRUDDatabase:
     def create_connection(self):
         connection = sqlite3.connect("shipments.db")
         cursor = connection.cursor()
-        return connection,cursor
-
-
+        return connection, cursor
 
     def create_shipment(self, shipment_data: ShipmentModel) -> ShipmentModel:
         connection, cursor = self.create_connection()

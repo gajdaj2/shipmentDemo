@@ -13,7 +13,7 @@ def next(n):
         swap_index -= 1
 
     digits[pivot], digits[swap_index] = digits[swap_index], digits[pivot]
-    digits[pivot + 1:] = sorted(digits[pivot + 1:])
+    digits[pivot + 1 :] = sorted(digits[pivot + 1 :])
 
     return int("".join(digits))
 

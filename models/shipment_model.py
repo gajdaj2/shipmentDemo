@@ -10,7 +10,6 @@ class ShipmentStatus(str, Enum):
     CANCELLED = "Cancelled"
 
 
-
 class BaseShipment(BaseModel):
     """
     Base model for shipment data.
@@ -23,13 +22,15 @@ class BaseShipment(BaseModel):
         min_length=1, max_length=100, description="Description of the shipment content"
     )
 
+
 class ShipmentCreate(BaseShipment):
     """
     Model for creating a new shipment.
     Args:
         BaseModel (_type_): _description_
     """
-    status : str | None = Field(
+
+    status: str | None = Field(
         min_length=1,
         max_length=50,
         default=ShipmentStatus.PENDING.value,
@@ -41,6 +42,7 @@ class ShipmentModel(BaseShipment):
     """
     A Pydantic model representing a shipment.
     """
+
     status: str | None = Field(
         min_length=1,
         max_length=50,

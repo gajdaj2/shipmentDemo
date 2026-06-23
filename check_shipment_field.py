@@ -1,7 +1,7 @@
 import db
 
 
-from fastapi import  HTTPException, status
+from fastapi import HTTPException, status
 
 
 def check_shipment_field(field: str, id: int):
